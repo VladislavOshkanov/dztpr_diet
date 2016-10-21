@@ -8,7 +8,7 @@ param p{i in F};
 /*price*/
 param a{F,N};
 /* nutritive value of foods (per dollar spent) */
-/*var x{f in F} >= 0;*/
+/*var x{f in F} = 0;*/
 /* dollars of food f to be purchased daily */
 var q{f in F} >= 0;
 /* quantity of food to be purchased daily*/
@@ -20,16 +20,16 @@ minimize cost : sum{f in F} q[f] * p[f];
 /* total food bill (dollars) */
 data;
 param p :=
-	Beef  286
+	Beef  28.6
 	Bread 26
-	Egg   5.2
-	Cucumber 105
-	Apple 	83
-	Butter 	611
-	Cottage_cheese 468
-	Potatoe		17
-	Carrot 		17
-	Rice		168
+	Egg   52
+	Cucumber 10.5
+	Apple 	16.6
+	Butter 	110
+	Cottage_cheese 104
+	Potatoe		1.7
+	Carrot 		1.7
+	Rice		86
 	Milk 		67;
 	
 param : N : b :=
@@ -43,16 +43,16 @@ set F := Beef, Bread, Egg, Cucumber, Apple, Butter, Cottage_cheese, Potatoe,Carr
 param a default 0
 :            Protein   Lipids  Carbohydrates  	Iron   Calcium :=	
 #            (g)    (g)      (g)    		(mg)   (mg)  	 
-Beef		260	150	0		26	180
+Beef		26	15	0		2.6	18
 Bread		63	22.7	343		25.2	1820
-Egg		6.5	5.5	0.55		0.6	25
-Cucumber	7	1	36		3	160
-Apple		3	2	140		1	60
-Butter		10	810	1		.	240
-Cottage_cheese 	180	90	30 		4 	1640
+Egg		65	55	5.5		6	25
+Cucumber	.7	.1	3.6		.3	160
+Apple		0.6	.4	28		.2	12
+Butter		1.8	145.8	0.18		.	43.2
+Cottage_cheese 	39.6	19.8	6.6 		0.88 	360.8
 Potatoe		20	1	170		8	120
-Carrot		10	2	100		3	330
-Rice		27	3	280		2	100
+Carrot		1.0	.2	10.0		.3	33.0
+Rice		13.5	1.5	140		1	84
 Milk		34	1	5		.	125;
 		
 end;
