@@ -1,0 +1,51 @@
+Problem:    _mydiet
+Rows:       6
+Columns:    11
+Non-zeros:  63
+Status:     OPTIMAL
+Objective:  cost = 122.1905413 (MINimum)
+
+   No.   Row name   St   Activity     Lower bound   Upper bound    Marginal
+------ ------------ -- ------------- ------------- ------------- -------------
+     1 nb[Protein]  NS            65            65             =       1.44136 
+     2 nb[Lipids]   NS            70            70             =      0.697057 
+     3 nb[Carbohydrates]
+                    NS           257           257             =      0.144175 
+     4 nb[Iron]     NS            10            10             =      -18.9952 
+     5 nb[Calcium]  NS          1000          1000             =      0.132607 
+     6 cost         B        122.191                             
+
+   No. Column name  St   Activity     Lower bound   Upper bound    Marginal
+------ ------------ -- ------------- ------------- ------------- -------------
+     1 q[Beef]      NL             0             0                     276.694 
+     2 q[Bread]     NL             0             0                     107.253 
+     3 q[Egg]       B        3.99472             0               
+     4 q[Cucumber]  NL             0             0                     124.792 
+     5 q[Apple]     NL             0             0                     68.1361 
+     6 q[Butter]    B      0.0520618             0               
+     7 q[Cottage_cheese]
+                    B     0.00488756             0               
+     8 q[Potatoe]   NL             0             0                     99.0148 
+     9 q[Carrot]    B        2.52787             0               
+    10 q[Rice]      NL             0             0                     111.353 
+    11 q[Milk]      B       0.363389             0               
+
+Karush-Kuhn-Tucker optimality conditions:
+
+KKT.PE: max.abs.err = 1.14e-13 on row 5
+        max.rel.err = 8.46e-17 on row 4
+        High quality
+
+KKT.PB: max.abs.err = 0.00e+00 on row 0
+        max.rel.err = 0.00e+00 on row 0
+        High quality
+
+KKT.DE: max.abs.err = 1.42e-14 on column 4
+        max.rel.err = 2.07e-16 on column 5
+        High quality
+
+KKT.DB: max.abs.err = 0.00e+00 on row 0
+        max.rel.err = 0.00e+00 on row 0
+        High quality
+
+End of output
