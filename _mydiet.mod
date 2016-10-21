@@ -6,14 +6,16 @@ param b{N};
 /* required daily allowances of nutrients */
 param p{i in F};
 /*price*/
+param d := 7;
+/*how much days*/
 param a{F,N};
 /* nutritive value of foods (per dollar spent) */
 /*var x{f in F} = 0;*/
 /* dollars of food f to be purchased daily */
-var q{f in F} >= 0;
+var q{f in F} >= 0,integer;
 /* quantity of food to be purchased daily*/
 
-s.t. nb{n in N}: sum{f in F} a[f,n] * q[f] = b[n];
+s.t. nb{n in N}: sum{f in F} a[f,n] * q[f] >= b[n]*30;
 /* nutrient balance (units) */
 minimize cost : sum{f in F} q[f] * p[f];
 /*minimize cost: sum{f in F} x[f]; */
