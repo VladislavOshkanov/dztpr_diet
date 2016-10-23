@@ -3,12 +3,15 @@ set N;
 set F;
 /* foods */
 param b{N};
-param m{N};
 /* required daily allowances of nutrients */
+param m{N};
+/* maximal daily allowances of nutrients */
+param maxq{i in F};
+/* maximal quantity of each product*/
 param p{i in F};
 /*price*/
-param d := 7;
-/*how much days*/
+param d := 30;
+/*how many days*/
 param a{F,N};
 /* nutritive value of foods (per dollar spent) */
 /*var x{f in F} = 0;*/
@@ -16,13 +19,28 @@ param a{F,N};
 var q{f in F} >= 0,integer;
 /* quantity of food to be purchased daily*/
 
-s.t. nb{n in N}: sum{f in F} a[f,n] * q[f] >= b[n]*30;
-/*s.t. ub{n in N}: sum{f in F} a[f,n] * q[f] <= m[n]*30;*/
+s.t. nb{n in N}: sum{f in F} a[f,n] * q[f] >= b[n]*d;
+s.t. ub{n in N}: sum{f in F} a[f,n] * q[f] <= m[n]*d;
+s.t. mb{f in F}: q[f] <= maxq[f]*d;
 /* nutrient balance (units) */
 minimize cost : sum{f in F} q[f] * p[f];
 /*minimize cost: sum{f in F} x[f]; */
 /* total food bill (dollars) */
 data;
+
+param maxq :=
+	Beef  4
+	Bread 1
+	Egg   0.2
+	Cucumber 4
+	Apple 	2
+	Butter 	0.2
+	Cottage_cheese 1
+	Potatoe		4
+	Carrot 		4
+	Rice		0.5
+	Milk 		0.8;
+
 param p :=
 	Beef  28.6
 	Bread 26
