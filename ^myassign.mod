@@ -1,20 +1,3 @@
-/* ASSIGN, Assignment Problem */
-
-/* Written in GNU MathProg by Andrew Makhorin <mao@gnu.org> */
-
-/* The assignment problem is one of the fundamental combinatorial
-   optimization problems.
-
-   In its most general form, the problem is as follows:
-
-   There are a number of agents and a number of tasks. Any agent can be
-   assigned to perform any task, incurring some cost that may vary
-   depending on the agent-task assignment. It is required to perform all
-   tasks by assigning exactly one agent to each task in such a way that
-   the total cost of the assignment is minimized.
-
-   (From Wikipedia, the free encyclopedia.) */
-
 param m, integer, > 0;
 /* number of drivers */
 
@@ -36,16 +19,27 @@ set K := 1..kk;
 param d{i in I, j in J}, >= 0;
 /* driver i have day-off in day j */
 
-var e{i in I, j in J, k in K}, >= 0;
-/* e = 1 means driver i works in day j on 
+param can {i in I, k in K}, >= 0;
+/* driver i can work at line k*/
+
+
+var e{i in I, j in J, k in K},integer, >= 0;
+/* e = 1 means driver i works in day j on
 line k  at early shift */
 
-var l{i in I, j in J, k in K}, >= 0;
-/* e = 1 means driver i works in day j on 
+var l{i in I, j in J, k in K},integer, >= 0;
+/* e = 1 means driver i works in day j on
 line k at late shift */
 
-s.t. es {j in J, k in K}: sum {i in I} e[i,j,k] = 1;
-s.t. ls {j in J, k in K}: sum {i in I} l[i,j,k] = 1;
+var c_earlyafterlate{i in I, j in 1..13}, integer, >= 0;
+var c_earlyshiftspare{i in I, j in 1..14}, integer, >=0;
+var c_lateshiftspare{i in I, j in 1..14}, integer, >=0;
+
+
+s.t. es {j in J, k in K}: sum {i in I} (e[i,j,k] + c_earlyshiftspare[i,j]) = 1;
+s.t. ls {j in J, k in K}: sum {i in I} (l[i,j,k] + c_lateshiftspare[i,j]) = 1;
+/*routes should be with drivers*/
+
 
 s.t. phi{i in I, j in J}: sum{k in K} e[i,j,k] <= 1;
 /* each driver can work only at one route at the same time */
@@ -57,20 +51,44 @@ s.t. doe{i in I, j in J}: sum{k in K} e[i,j,k] * d[i,j] = 0;
 s.t. dol{i in I, j in J}: sum{k in K} l[i,j,k] * d[i,j] = 0;
 /* driver can't work at day-off */
 
-minimize obj: sum{i in I}sum{j in J}sum{k in K}  if (e[i,j,k] + l[i,j,k] = 2 then 1);
+s.t. threeevenings{i in I, j in 1 .. 11}: sum {jj in j..j+3, k in K} l[i,jj,k] <= 3;
+
+/*s.t. notfollow{i in I, j in 1 .. 13}: sum { k in K } (l[i,j,k]+e[i,j+1,k]) <= 2;*/
+
+s.t. earlyafterlate{i in I, j in 1..13}: sum {k in K} (l[i,j,k]+e[i,j+1,k]) + c_earlyafterlate[i,j] <= 2;
+
+s.t. c_early{i in I, j in 1..13}: c_earlyafterlate[i,j] <= 1;
+
+
+s.t. fourlateshifts {i in I}: sum {k in K, j in J} l[i,j,k] <= 4;
+
+s.t. oneshift {i in I, j in J}: sum {k in K} (e[i,j,k] + l[i,j,k]) <= 1;
+
+s.t. quale {i in I, j in J, k in K}: e[i,j,k] * (1 - can[i,k]) = 0;
+s.t. quall {i in I, j in J, k in K}: l[i,j,k] * (1 - can[i,k]) = 0;
+
+maximize constr: sum{i in I, j in 1..13} -30*(1-c_earlyafterlate[i,j]) +
+    sum{i in I, j in 1..14} -20 * c_earlyshiftspare[i,j] + sum{i in I, j in 1..14} -20 * c_lateshiftspare[i,j];
 /* the objective is to find a cheapest assignment */
 
 solve;
 
 printf "\n";
-//printf "Agent  Task       Cost\n";
-//printf{i in I} "%5d %5d %10g\n", i, sum{j in J} j * x[i,j],
-//   sum{j in J} c[i,j] * x[i,j];
-//printf "----------------------\n";
-//printf "     Total: %10g\n", sum{i in I, j in J} c[i,j] * x[i,j];
+/*printf "Agent  Task       Cost\n";
+printf{i in I} "%5d %5d %10g\n", i, sum{j in J} j * x[i,j],
+   sum{j in J} c[i,j] * x[i,j];
+printf "----------------------\n";
+printf "     Total: %10g\n", sum{i in I, j in J} c[i,j] * x[i,j];
+*/
+for {i in I}{
+	for {j in J}{
+		printf" {%d,%d}",if e[i,j,1] = 1 then 1 else if e[i,j,2] = 1 then 2 else if e[i,j,3] = 1 then 3 else 0,
+        if l[i,j,1] = 1 then 1 else if l[i,j,2] = 1 then 2 else if l[i,j,3] = 1 then 3 else 0;
+	}
+	printf "\n";
+}
+printf "function value is : %d\n", constr -4290;
 
-printf {i in I, j in J, k in K}, i, j, k;
-printf "\n";
 
 data;
 
@@ -87,17 +105,31 @@ param kk := 3;
 
 
 
-param d : 1  2  3  4  5  6  7  8  9 10 11 12 13 14 :=
-      1   0  1  1  0  0  0  0  0  1  1  0  0  0  0 
-      2   0  0  0  0  1  1  0  0  0  0  0  1  1  0
-      3   0  0  0  1  0  1  0  0  0  0  1  0  1  0 
-      4   1  0  1  0  0  0  0  1  0  1  0  0  0  0 
-      5   0  1  0  0  0  0  1  0  1  0  0  0  0  1
-      6   1  0  0  0  1  0  0  1  0  0  0  1  0  0 
-      7   0  0  1  0  0  1  0  0  0  1  0  0  1  0 
-      8   0  0  0  1  1  0  0  0  0  0  1  1  0  0 
-      9   0  0  0  0  1  0  1  0  0  0  0  1  0  1
-     10   1  0  1  0  0  0  0  1  0  1  0  0  0  0
-     11   0  1  0  1  0  0  0  0  1  0  1  0  0  0 ;
+param d :        1  2  3  4  5  6  7  8  9 10 11 12 13 14 :=
+
+  /*A*/    1     1  0  0  0  0  0  1  1  0  0  0  0  0  1
+  /*B*/    2     0  0  1  1  0  0  0  0  0  1  1  0  0  0
+  /*C*/    3     0  1  0  1  0  0  0  0  1  0  1  0  0  0
+  /*D*/    4     1  0  0  0  0  1  0  1  0  0  0  0  1  0
+  /*E*/    5     0  0  0  0  1  0  1  0  0  0  0  1  0  1
+  /*F*/    6     0  0  1  0  0  1  0  0  0  1  0  0  1  0
+  /*G*/    7     1  0  0  1  0  0  0  1  0  0  1  0  0  0
+  /*H*/    8     0  1  1  0  0  0  0  0  1  1  0  0  0  0
+  /*I*/    9     0  0  1  0  1  0  0  0  0  1  0  1  0  0
+  /*J*/   10     1  0  0  0  0  1  0  1  0  0  0  0  1  0
+  /*K*/   11     0  1  0  0  0  0  1  0  1  0  0  0  0  1 ;
+param can: 1 2 3 :=
+        1  1 0 0
+        2  0 1 0
+        3  1 0 0
+        4  0 1 0
+        5  0 1 1
+        6  0 1 1
+        7  0 0 1
+        8  0 1 0
+        9  1 1 0
+       10  1 0 0
+       11  1 0 1 ;
+
 
 end;
