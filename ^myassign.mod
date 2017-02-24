@@ -16,13 +16,17 @@ set J := 1..n;
 set K := 1..kk;
 /* set of lines */
 
-param d{i in I, j in J}, >= 0;
+param d{i in I, j in J}, binary;
 /* driver i have day-off in day j */
 
-param pd{i in I, j in J}, >=0;
+param pd{i in I, j in J}, binary;
 /* driver i want to have day off in day j */
 
-param can {i in I, k in K}, >= 0;
+param pe {i in I, j in J}, binary;
+param pl {i in I, j in J}, binary;
+/* driver's preferenses for Early or Late shift*/
+
+param can {i in I, k in K}, binary;
 /* driver i can work at line k*/
 
 var e{i in I, j in J, k in K},binary;
@@ -38,6 +42,7 @@ var c_earlyshiftspare{i in I, j in J}, integer, >=0;
 var c_lateshiftspare{i in I, j in J}, integer, >=0;
 var c_morethanfourdays {i in I}, integer, >=0;
 var c_lessthanfourdays {i in I}, integer, >=0;
+var c_threedaysoff {i in I, j in J}, binary;
 /*var c_preferreddayoff {i in I, j in J}, integer, >=0;*/
 
 s.t. es {j in J, k in K}: sum {i in I} (e[i,j,k] + c_earlyshiftspare[i,j]) = 1;
@@ -72,6 +77,9 @@ s.t. quale {i in I, j in J, k in K}: e[i,j,k] * (1 - can[i,k]) = 0;
 s.t. quall {i in I, j in J, k in K}: l[i,j,k] * (1 - can[i,k]) = 0;
 /* driver's qualification constraints */
 
+s.t. limit8{i in 1..8, j in 1..12}: sum{k in K} (e[i,j,k] + l[i,j,k] + e[i,j+1,k] + l[i,j+1,k] + e[i,j+2,k] + l[i,j+2,k]) + 3*c_threedaysoff[i,j] <= 3;
+s.t.  foo {i in 1..8}: sum {j in 1..12} c_threedaysoff[i,j] <=1;
+
 maximize constr:
 
     - 4 * (sum{i in I, j in J} (pd[i,j] * sum{k in K} (e[i,j,k] + l[i,j,k])))
@@ -84,7 +92,11 @@ maximize constr:
 
     - 20 * sum{i in I, j in J} c_earlyshiftspare[i,j]
 
-    - 20 * sum{i in I, j in J} c_lateshiftspare[i,j];
+    - 20 * sum{i in I, j in J} c_lateshiftspare[i,j]
+
+    + 3 * (sum{i in I, j in J, k in K}(pe[i,j] * e[i,j,k] + pl[i,j] * l[i,j,k]))
+
+    + 5*(sum{i in 1..8, j in 1..12} c_threedaysoff[i,j]);
 
 
 solve;
@@ -92,8 +104,23 @@ solve;
 printf "\n";
 
 for {i in I}{
+  printf "%s ",
+    if i = 1 then 'A'
+    else if i = 2 then 'B'
+    else if i = 3 then 'C'
+    else if i = 4 then 'D'
+    else if i = 5 then 'E'
+    else if i = 6 then 'F'
+    else if i = 7 then 'G'
+    else if i = 8 then 'H'
+    else if i = 9 then 'I'
+    else if i = 10 then 'J'
+    else if i = 11 then 'K';
+
+
 	for {j in J}{
-		printf" {%d,%d}",if e[i,j,1] = 1 then 1 else if e[i,j,2] = 1 then 2 else if e[i,j,3] = 1 then 3 else 0,
+    printf "%d", j;
+		printf"{%d,%d} ",if e[i,j,1] = 1 then 1 else if e[i,j,2] = 1 then 2 else if e[i,j,3] = 1 then 3 else 0,
         if l[i,j,1] = 1 then 1 else if l[i,j,2] = 1 then 2 else if l[i,j,3] = 1 then 3 else 0;
 	}
   printf " Late Shifts: %d", sum{jj in J, k in K} l[i,jj,k];
@@ -122,44 +149,88 @@ param kk := 3;
 
 
 
-param d :        1  2  3  4  5  6  7  8  9 10 11 12 13 14 :=
+   param d :    1  2  3  4  5  6  7     8  9 10 11 12 13 14 :=
 
-  /*A*/    1     0  1  1  0  0  0  0  0  1  1  0  0  0  0
-  /*B*/    2     0  0  0  0  1  1  0  0  0  0  0  1  1  0
-  /*C*/    3     0  0  0  1  0  1  0  0  0  0  1  0  1  0
-  /*D*/    4     1  0  1  0  0  0  0  1  0  1  0  0  0  0
-  /*E*/    5     0  1  0  0  0  0  1  0  1  0  0  0  0  1
-  /*F*/    6     1  0  0  0  1  0  0  1  0  0  0  1  0  0
-  /*G*/    7     0  0  1  0  0  1  0  0  0  1  0  0  1  0
-  /*H*/    8     0  0  0  1  1  0  0  0  0  0  1  1  0  0
-  /*I*/    9     0  0  0  0  1  0  1  0  0  0  0  1  0  1
-  /*J*/   10     1  0  1  0  0  0  0  1  0  1  0  0  0  0
-  /*K*/   11     0  1  0  1  0  0  0  0  1  0  1  0  0  0 ;
+     /*A*/ 1    1  0  0  0  0  0  1/*A*/1  0  0  0  0  0  1  /*A*/
+     /*B*/ 2    0  0  1  1  0  0  0/*B*/0  0  1  1  0  0  0  /*B*/
+     /*C*/ 3    0  1  0  1  0  0  0/*C*/0  1  0  1  0  0  0  /*C*/
+     /*D*/ 4    1  0  0  0  0  1  0/*D*/1  0  0  0  0  1  0  /*D*/
+     /*E*/ 5    0  0  0  0  1  0  1/*E*/0  0  0  0  1  0  1  /*E*/
+     /*F*/ 6    0  0  1  0  0  1  0/*F*/0  0  1  0  0  1  0  /*F*/
+              /*1  2  3  4  5  6  7     8  9  10 11 12 13 14*/
+     /*G*/7     1  0  0  1  0  0  0/*G*/1  0  0  1  0  0  0  /*G*/
+     /*H*/8     0  1  1  0  0  0  0/*H*/0  1  1  0  0  0  0  /*H*/
+     /*I*/9     0  0  1  0  1  0  0/*I*/0  0  1  0  1  0  0  /*I*/
+     /*J*/10    1  0  0  0  0  1  0/*J*/1  0  0  0  0  1  0  /*J*/
+     /*K*/11    0  1  0  0  0  0  1/*K*/0  1  0  0  0  0  1 ;/*K*/
+              /*1  2  3  4  5  6  7     8  9  10 11 12 13 14*/
 
-param pd :       1  2  3  4  5  6  7  8  9 10 11 12 13 14 :=
 
-  /*A*/    1     1  1  1  1  1  1  1  1  1  1  1  1  1  1
-  /*B*/    2     0  0  0  0  0  0  0  0  0  0  0  0  0  0
-  /*C*/    3     0  0  0  0  0  0  0  0  0  0  0  0  0  0
-  /*D*/    4     0  0  0  0  0  0  0  0  0  0  0  0  0  0
-  /*E*/    5     0  0  0  0  0  0  0  0  0  0  0  0  0  0
-  /*F*/    6     0  0  0  0  0  0  0  0  0  0  0  0  0  0
-  /*G*/    7     0  0  0  0  0  0  0  0  0  0  0  0  0  0
-  /*H*/    8     0  0  0  0  0  0  0  0  0  0  0  0  0  0
-  /*I*/    9     0  0  0  0  0  0  0  0  0  0  0  0  0  0
-  /*J*/   10     0  0  0  0  0  0  0  0  0  0  0  0  0  0
-  /*K*/   11     0  0  0  0  0  0  0  0  0  0  0  0  0  0 ;
+
+    param pd :   1  2  3  4  5  6  7     8  9 10 11 12 13 14 :=
+
+      /*A*/ 1    0  0  1  0  1  0  0/*A*/0  0  0  1  1  0  0  /*A*/
+      /*B*/ 2    0  0  0  0  0  1  0/*B*/1  0  0  0  0  1  0  /*B*/
+      /*C*/ 3    0  0  0  0  0  0  0/*C*/0  0  0  0  0  1  0  /*C*/
+      /*D*/ 4    0  0  0  0  0  0  0/*D*/0  0  1  1  0  0  0  /*D*/
+      /*E*/ 5    0  1  1  0  0  0  0/*E*/0  1  0  0  0  0  0  /*E*/
+      /*F*/ 6    1  0  0  0  0  0  0/*F*/1  0  0  0  0  0  0  /*F*/
+               /*1  2  3  4  5  6  7     8  9  10 11 12 13 14*/
+      /*G*/7     0  0  0  0  0  1  0/*G*/0  0  0  0  0  1  1  /*G*/
+      /*H*/8     0  0  0  0  0  1  0/*H*/0  0  0  0  0  1  0  /*H*/
+      /*I*/9     0  0  0  0  0  0  1/*I*/0  0  0  0  0  0  1  /*I*/
+      /*J*/10    0  0  1  0  0  0  0/*J*/0  0  1  1  0  0  0  /*J*/
+      /*K*/11    0  0  0  0  1  0  0/*K*/0  0  0  1  0  0  0 ;/*K*/
+               /*1  2  3  4  5  6  7     8  9  10 11 12 13 14*/
+
+
+
+   param pe :   1  2  3  4  5  6  7     8  9 10 11 12 13 14 :=
+
+     /*A*/ 1    0  0  0  0  0  0  0/*A*/0  0  1  0  0  0  0  /*A*/
+     /*B*/ 2    1  0  0  0  0  0  0/*B*/0  0  0  0  0  0  0  /*B*/
+     /*C*/ 3    0  0  0  0  0  0  0/*C*/0  0  0  0  0  0  0  /*C*/
+     /*D*/ 4    0  0  0  1  0  0  0/*D*/0  0  0  0  1  0  0  /*D*/
+     /*E*/ 5    0  0  0  1  0  0  0/*E*/0  0  0  0  0  0  0  /*E*/
+     /*F*/ 6    0  0  0  0  1  0  1/*F*/0  0  0  0  0  0  0  /*F*/
+              /*1  2  3  4  5  6  7     8  9  10 11 12 13 14*/
+     /*G*/7     0  0  0  0  0  0  0/*G*/0  0  0  0  1  0  0  /*G*/
+     /*H*/8     0  0  0  0  1  0  0/*H*/0  0  0  0  1  0  0  /*H*/
+     /*I*/9     1  0  0  0  0  0  0/*I*/0  1  0  0  0  0  0  /*I*/
+     /*J*/10    0  0  0  0  0  0  0/*J*/0  1  0  0  0  0  0  /*J*/
+     /*K*/11    0  0  0  1  0  1  0/*K*/0  0  0  0  0  0  0 ;/*K*/
+              /*1  2  3  4  5  6  7     8  9  10 11 12 13 14*/
+
+
+
+    param pl :   1  2  3  4  5  6  7     8  9 10 11 12 13 14 :=
+
+      /*A*/ 1    0  1  0  1  0  0  0/*A*/0  0  0  0  0  0  0  /*A*/
+      /*B*/ 2    0  1  0  0  0  0  0/*B*/0  0  0  0  0  0  0  /*B*/
+      /*C*/ 3    0  0  0  0  0  0  1/*C*/0  0  1  0  0  0  0  /*C*/
+      /*D*/ 4    0  0  0  0  0  0  0/*D*/0  0  0  0  0  0  0  /*D*/
+      /*E*/ 5    1  0  0  0  0  1  0/*E*/0  0  0  0  0  1  0  /*E*/
+      /*F*/ 6    0  0  0  0  0  0  0/*F*/0  0  0  0  0  0  1  /*F*/
+               /*1  2  3  4  5  6  7     8  9  10 11 12 13 14*/
+      /*G*/7     0  0  1  0  0  0  0/*G*/0  0  0  0  0  0  0  /*G*/
+      /*H*/8     0  0  0  0  0  0  0/*H*/0  0  0  0  0  0  0  /*H*/
+      /*I*/9     0  0  0  0  0  0  0/*I*/0  0  0  0  0  1  0  /*I*/
+      /*J*/10    0  0  0  0  1  0  0/*J*/0  0  0  0  1  0  1  /*J*/
+      /*K*/11    0  0  0  0  0  0  0/*K*/0  0  0  0  0  0  0 ;/*K*/
+               /*1  2  3  4  5  6  7     8  9  10 11 12 13 14*/
+
+
 param can: 1 2 3 :=
-        1  0 1 0
-        2  0 0 1
-        3  0 1 0
+        1  1 0 1
+        2  0 1 0
+        3  1 1 0
         4  1 0 0
-        5  1 0 1
-        6  0 0 1
-        7  0 1 0
-        8  1 1 0
-        9  0 1 1
-       10  1 0 1
+        5  1 0 0
+        6  0 1 1
+        7  0 0 1
+        8  0 0 1
+        9  1 0 0
+       10  0 1 1
        11  0 0 1 ;
 
 
