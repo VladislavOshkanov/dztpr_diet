@@ -1,0 +1,233 @@
+\documentclass[]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\hoffset=-100pt
+\voffset=-100pt
+\textwidth=520pt
+\textheight=700pt
+%а тут уже можно что-нибудь менять.
+\title{The bus-driver-planning challenge}
+\author{Ошканов В.С. гр. 13122}
+\begin{document}
+\maketitle
+\section{Математическая модель}
+
+Я решаю задачу о составлении расписания водителей автобусов с
+сайта https://careers.quintiq.com/puzzle.html
+Целью задачи является составление расписания с максимальной
+суммой бонусов и штрафов, обозначенных в задании.
+
+Для записи математической модели нам потребуются следующие обозначения:
+\par
+\textit{Множества}:
+\par\noindent
+$I$ --- множество водителей.
+\par\noindent
+$J$ --- множество дней.
+\par\noindent
+$K$ --- множество дней.
+\par
+\textit{Параметры}:
+\par\noindent
+$d_{ij}$ --- (d - day off) равна 1, если у водителя $i$ выходной в день $j$, и 0
+в противном случае, $i\in I$, $j\in J$.
+\par\noindent
+$pd_{ij}$ --- (pd - prefer day off) равен 1, если водитель $i$ хочет отдыхать в
+день $j$, $i\in I$, $j\in J$.
+\par\noindent
+$pe_{ij}$ --- (pe - prefer early) водитель $i$ хочет работать в утреннюю
+смену в день $j$, $i\in I$, $j\in J$.
+\par\noindent
+$pl_{ij}$ --- (pl - prefer late) водитель $i$ хочет работать в вечернюю
+смену в день $j$, $i\in I$, $j\in J$.
+\par\noindent
+$can_{ik}$ --- квалификация водителя $i$ позволяет ему работать на маршруте $k$,
+ $i\in I$, $k\in K$.
+\par
+\textit{Переменные}:
+\par\noindent
+$e_{ijk}$ --- равна 1, если водитель $i$ работает в день $j$ на маршруте $k$
+в утреннюю смену.
+\par\noindent
+$l_{ijk}$ --- равна 1, если водитель $i$ работает в день $j$ на маршруте $k$
+в вечернюю смену.
+
+Далее следует набор бинарных переменных, необходимых для составления модели:
+$earlyafterlate_{ij}$ - равна 1, если у водителя утренняя смена следует за вечерней,
+$i \in I, j in J\\{14}$.
+\par\noindent
+$earlyshiftspare_{jk}$ - равна 1, если в день $j$ на маршруте $k$ нет водителя в утреннюю смену.
+\par\noindent
+$lateshiftspare_{jk}$ - равна 1, если в день $j$ на маршруте $k$ нет водителя в вечернюю смену.
+\par\noindent
+$morethanfourdays_{i}$ - равна тому, насколько больше, чем 4,  вечерних смен водитель $i$ выполняет за все дни.
+\par\noindent
+$lessthanfourdays_{i}$ - равна тому, насколько меньше, чем 4,  вечерних смен водитель $i$ выполняет за все дни.
+\par\noindent
+$threedaysoff_{i in I, j in J}$ - водитель $i$ имеет 3 выходных подряд, начиная с дня $j$.
+\par\noindent
+
+С использованием введенных обозначений, математическая модель задачи о рационе
+запишется следующим образом:
+\begin{eqnarray}
+-4 * \sum_{i\in I}\sum_{j\in J}(pd_{ij}*\sum_{k \in K}(e_{ijk}+l_{ijk}))
+-8 * \sum_{i\in I}(morethanfourdays_i+lessthanfourdays_i) \\ \nonumber
+-30 * \sum_{i\in I}\sum_{j in J\backslash{14}} earlyafterlate_ij
+-20 * \sum_{j \in J}\sum_{k \in K} (earlyshiftspare_{ik} + lateshiftspare_{jk}) \\ \nonumber
++ 3 * \sum_{i \in I}\sum_{j \in J}\sum_{k \in K} (pe_{ij}*e_{ijk} + pl_{ij}*l_{ijk})
++ 5 * \sum_{i \in I}\sum_{j \in J\backslash{13,14}} threedaysoff_{ij}\rightarrow\max;
+\end{eqnarray}
+\begin{equation}
+  \sum_{i \in I} e_{ijk} + earlyshiftspare_{jk} = 1, j \in J, k \in K.
+\end{equation}
+\begin{equation}
+  \sum_{i \in I} l_{ijk} + lateshiftspare_{jk} = 1, j \in J, k \in K.
+\end{equation}
+\begin{equation}
+  \sum_{k \in K} e_{ijk} \leq 1, i \in I, j \in J.
+\end{equation}
+\begin{equation}
+  \sum_{k \in K} l_{ijk} \leq 1, i \in I, j \in J.
+\end{equation}
+\begin{equation}
+  \sum_{k \in K} e_{ijk}*d_{ij} = 0, i \in I, j \in J.
+\end{equation}
+\begin{equation}
+  \sum_{k \in K} l_{ijk}*d_{ij} = 0, i \in I, j \in J.
+\end{equation}
+\begin{equation}
+  \sum_{n = j}^{j+2}\sum_{k \in K} l_{ink} \leq 3, i \in I, j \in J\backslash\{13,14\}.
+\end{equation}
+\begin{equation}
+  \sum_{k \in K} (e_{i j+1 k} + l_{ijk})
+              - earlyafterlate_{ij} \leq 1, i \in I, j in J\backslash\{13\}.
+\end{equation}
+\begin{equation}
+  \sum_{k \in K} (e_{ijk}+l_{ijk}) \leq 1, i \in I, j \in J.
+\end{equation}
+\begin{equation}
+  \sum_{j \in J}\sum_{k \in K} l_{ijk} - morethanfourdays_{i} - 4 \leq 0, i \in I.
+\end{equation}
+\begin{equation}
+  \sum_{j \in J}\sum_{k \in K} l_{ijk} - lessthanfourdays_{i} - 4 \geq 0, i \in I.
+\end{equation}
+\begin{equation}
+  e_{ijk}*(1-can_{ik}) = 0, i \in I, j \in J, k \in K.
+\end{equation}
+\begin{equation}
+  l_{ijk}*(1-can_{ik}) = 0, i \in I, j \in J, k \in K.
+\end{equation}
+\begin{equation}
+  \sum_{k \in K} (e_{ijk}+l_{ijk}+e{ij+1k}+l_{ij+1k}+e_{ij+2k}+l_{ij+2k})
+        + 3*threedaysoff_{ij} \leq 3, i \in I, j \in J\backslash\{13,14\}.
+\end{equation}
+\begin{equation}
+  \sum {j \in  J\backslash\{13,14\}} threedaysoff_{ij} \leq 1.
+\end{equation}
+С помощью неравенства \eqref{eq:2} я обозначил, что количество питательных
+веществ в покупаемых продуктах должно превосходить минимальную суточную
+потребность.
+
+\section{Вычислительный эксперимент}
+Я взял следующие продукты, содержащие следующие питательные вещества:
+у меня получилась таблица \ref{tab:1}.
+
+
+
+Рассчитав необходимое количество продуктов для жизни в течение 30 дней я получил результат, обозначенный в таблице \ref{tab:2}.
+
+
+За продукты нужно отдать 1753 рубля. Результат интересный, но неприменимый для жизни.  В выборку вошли продукты с
+максимальным отношением количества питательных веществ к цене. Невозможно питаться всего тремя продуктами,
+причем количество углеводов было превышено почти в 2 раза. Далее, я решил обозначить не только минимальную,
+но и максимальную суточную потребность. Данные я так же взял из википедии. К модели добавился один новый параметр и
+новые ограничения:
+
+\par\noindent
+$m_j$ --- максимальная рекомендуемая суточная потребность в питательном веществе $j$,$\quad j\in N$.
+\begin{equation}
+	\sum_{i\in F}q_ia_{ij} \leq m_j*d,\quad j\in N.
+\end{equation}
+
+Результат получился более разнообразным, а цена сразу выросла до 2859 рублей. В
+выборку вошли на этот раз 6 продуктов и диета стала более "здоровой". Результат
+в таблице \ref{tab:3}.
+Получилось, что в месяц нужно съедать 28 кг морковки, это почти килограмм в день,
+вряд ли это кому-то понравится. Поэтому я решил добавить ограничение на количество
+каждого продукта исходя из здравого смысла. Ограничения можно посмотреть в таблице~\ref{tab:1}.
+Добавился ещё один параметр и следующие ограничения:
+\par\noindent
+$k_i$ --- максимальное потребление продукта $i$ в день (в единицах продукта),$\quad i\in F$.
+\begin{equation}
+	q_i \leq k_i*d,\quad i\in F.
+\end{equation}
+\begin{table}
+	\caption{Второй результат}
+	\centering
+	\label{tab:3}
+	\begin{tabular}{|c|c|}
+		\hline
+		Название&Количество\\
+		\hline
+		Хлеб & 6 булок\\
+		\hline
+		Масло & 13 упаковок(180г)\\
+		\hline
+		Картофель & 1.3кг\\
+		\hline
+		Морковь & 28кг\\
+		\hline
+		Огурец & 4.7кг\\
+		\hline
+		Яблоко & 12шт\\
+		\hline
+
+	\end{tabular}
+
+\end{table}
+
+Ну вот, с этим уже можно жить, правда и цена соответствующая, 6296 рублей в месяц... Результат в таблице~\ref{tab:4}. Лидирует, по прежнему,
+морковка, но в рацион уже вошли почти все продукты.
+\begin{table}
+	\caption{Финальный результат}
+	\centering
+	\label{tab:4}
+	\begin{tabular}{|c|c|}
+		\hline
+		Название&Количество\\
+		\hline
+		Говядина & 1.3 кг\\
+		\hline
+		Хлеб & 8 булок\\
+		\hline
+		Яйцо & 6 штук\\
+		\hline
+		Огурец & 600г\\
+		\hline
+		Масло & 6 упаковок(180г)\\
+		\hline
+		Картофель & 100г\\
+		\hline
+		Морковь & 11.2кг\\
+		\hline
+		Яблоко & 59шт\\
+		\hline
+		Рис & 13упаковок(500г) \\
+		\hline
+		Творог & 23 упаковки (220г)\\
+		\hline
+
+	\end{tabular}
+
+\end{table}
+\section{Вывод}
+При самых простых и очевидных ограничениях результат совсем не подходит для
+реального человека. Но, анализируя результаты и накладывая дополнительные
+ограничения, можно получить уже что-то более премлемое. Но для того, чтобы
+применять результаты в жизни, нужно рассматривать намного больше продуктов,
+питательных веществ, витаминов и микроэлементов, учитывать усваиваемость
+каждого вещества в каждом продукте. Для этого необходимо много времени и
+серьёзные исследования.
+\end{document}
